@@ -1,0 +1,30 @@
+/* Fixed A4 canvas. Consumers use the `page` class (from @yodogawa404/print-assets/page)
+   and add a data-canvas="page" attribute. */
+.print-assets-page {
+  width: 210mm;
+  height: 297mm;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Fixed 2048 x 2048 px square canvas. Consumers use the `pageSquare` class. */
+.print-assets-page-square {
+  width: 2048px;
+  height: 2048px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure the font stack also applies when printing / capturing. */
+.print-assets-page *,
+.print-assets-page-square * {
+  font-family: 'Inter', 'LINE Seed JP', 'Noto Sans JP', sans-serif;
+}

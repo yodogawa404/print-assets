@@ -1,0 +1,54 @@
+{
+  "name": "@yodogawa404/print-assets",
+  "version": "1.0.0",
+  "description": "Vite plugin for building fixed A4 print canvases (posters, flyers, etc.) and exporting them to PDF / PNG (Retina 2x) via print CSS",
+  "type": "module",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./entrypoint": {
+      "types": "./dist/entrypoint.d.ts",
+      "import": "./dist/entrypoint.js"
+    },
+    "./vite-plugin": {
+      "types": "./dist/vite-plugin.d.ts",
+      "import": "./dist/vite-plugin.js"
+    },
+    "./page": {
+      "types": "./dist/page.d.ts",
+      "import": "./dist/page.js"
+    },
+    "./page.css": "./dist/page.css",
+    "./print.css": "./dist/print.css"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
+  "peerDependencies": {
+    "playwright": ">=1.40",
+    "react": "^19",
+    "react-dom": "^19",
+    "vite": ">=6"
+  },
+  "dependencies": {
+    "tinyglobby": "^0.2.17"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "typescript": "^7.0.2"
+  }
+}
