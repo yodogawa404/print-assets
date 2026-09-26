@@ -5,6 +5,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "moduleDetection": "force",
+    "types": ["node"],
     "isolatedModules": true,
     "declaration": true,
     "emitDeclarationOnly": false,
