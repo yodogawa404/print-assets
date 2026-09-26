@@ -1,6 +1,6 @@
 {
   "name": "@yodogawa404/print-assets",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Vite plugin for building fixed A4 print canvases (posters, flyers, etc.) and exporting them to PDF / PNG (Retina 2x) via print CSS",
   "type": "module",
   "license": "MIT",
@@ -51,5 +51,8 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "typescript": "^7.0.2"
+  },
+  "repository": {
+    "url": "https://github.com/yodogawa404/print-assets"
   }
 }
