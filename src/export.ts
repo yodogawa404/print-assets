@@ -46,7 +46,7 @@ export async function exportPages({ pagesDir, distDir }: ExportOptions) {
   const { chromium } = await import('playwright');
 
   const server = createServer(async (req, res) => {
-    const urlPath = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
+    const urlPath = decodeURIComponent(req.url ?? '/');
     let filePath = join(distDir, urlPath === '/' ? 'index.html' : urlPath);
     try {
       const { stat } = await import('node:fs/promises');
