@@ -76,7 +76,7 @@ export function printAssets(options: PrintAssetsOptions): Plugin {
       return {
         optimizeDeps: {
           // Virtual modules cannot be prebundled, so exclude the whole package.
-          // The consumer imports `init` directly from '@yogodawa404/print-assets/init'.
+          // The consumer imports `init` directly from '@yodogawa404/print-assets/init'.
           exclude: ['@yodogawa404/print-assets'],
           // Once excluded, react imports are no longer scanned, so prebundle them
           // explicitly to resolve CJS named exports (e.g. createRoot).
