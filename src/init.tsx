@@ -4,9 +4,9 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App.js';
 import { themeClass } from 'virtual:print-assets/config';
 
-const root = document.getElementById('app');
-if (!root) {
-  throw new Error('#app element not found');
+export function init(element: HTMLElement) {
+  if (!element) {
+    throw new Error('element not found');
+  }
+  createRoot(element).render(<App themeClass={themeClass} />);
 }
-
-createRoot(root).render(<App themeClass={themeClass} />);

@@ -1,6 +1,5 @@
 import { existsSync } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { globSync } from 'tinyglobby';
 import type { Plugin } from 'vite';
 import { exportPages } from './export.js';
@@ -71,15 +70,13 @@ export function printAssets(options: PrintAssetsOptions): Plugin {
   const styles = (options.styles ?? []).map((s) => toSpecifier(cwd, s));
   const distDir = resolve(cwd, 'dist');
 
-  const entrypointPath = fileURLToPath(new URL('./entrypoint.js', import.meta.url));
-
   return {
     name: 'print-assets',
     config() {
       return {
         optimizeDeps: {
-          // Virtual modules cannot be prebundled; the HTML src is rewritten to an
-          // absolute path in transformIndexHtml instead.
+          // Virtual modules cannot be prebundled, so exclude the whole package.
+          // The consumer imports `init` directly from '@yogodawa404/print-assets/init'.
           exclude: ['@yodogawa404/print-assets'],
           // Once excluded, react imports are no longer scanned, so prebundle them
           // explicitly to resolve CJS named exports (e.g. createRoot).
@@ -92,12 +89,6 @@ export function printAssets(options: PrintAssetsOptions): Plugin {
           ],
         },
       };
-    },
-    transformIndexHtml(html) {
-      return html.replace(
-        '@yodogawa404/print-assets/entrypoint',
-        () => entrypointPath,
-      );
     },
     resolveId(id) {
       if (id === ROUTES || id === CONFIG) return '\0' + id;

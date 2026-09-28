@@ -50,16 +50,23 @@ export default defineConfig({
 });
 ```
 
-`index.html`（エントリはプラグインが配布します。consumer に glue コードは不要）:
+`index.html`:
 
 ```html
 <!doctype html>
 <html lang="ja">
   <body>
     <div id="app"></div>
-    <script type="module" src="@yogodawa404/print-assets/entrypoint"></script>
+    <script type="module" src="/src/entrypoint.js"></script>
   </body>
 </html>
+```
+
+`src/entrypoint.js`:
+
+```js
+import { init } from '@yodogawa404/print-assets/init';
+init(document.getElementById('app'));
 ```
 
 ### ページの追加

@@ -27,10 +27,9 @@ src/
   vite-plugin.ts   # printAssets({ pagesDir, theme?, styles? })
                    #   virtual:print-assets/routes（pagesDir/*/main.tsx を glob）
                    #   virtual:print-assets/config（theme + styles 注入）
-                   #   transformIndexHtml: entrypoint の script src を絶対パスに書換
                    #   config(): optimizeDeps の exclude / include
                    #   closeBundle: exportPages を実行
-  entrypoint.tsx   # index.html から直接 import。consumer に glue 不要
+  init.tsx         # init(element) を export。consumer が index.html 等から直接 import して起動
   App.tsx          # file-based hash routing + 画面専用カタログ
   page.css / page.ts  # .page 固定キャンバス（構造のみ）
   print.css        # @page { size:A4; margin:0 } + print 用ステージ除去
@@ -49,8 +48,8 @@ scripts/build.mjs  # tsc で precompile + page.css / print.css を dist へコ�
   - exclude すると react 系が走査されないため、`optimizeDeps.include` で
     `react` / `react-dom` / `react-dom/client` / `react/jsx-runtime` / `react/jsx-dev-runtime`
     を prebundle 強制（これをしないと dev で `createRoot` の named export エラーになる）。
-  - HTML の script src（`@yogodawa404/print-assets/entrypoint`）は
-    `transformIndexHtml` が絶対パスに書換（しないと dev で 404 / SPA fallback に落ちる）。
+  - consumer は `init` を `@yogodawa404/print-assets/init` から import して起動する
+    （エントリ配布・`transformIndexHtml` による書換は廃止）。
 - **固定キャンバス**: `.page`（A4 `210mm × 297mm`）と `.page-square`（`2048 × 2048 px`）の 2 種。
   PDF も PNG も `media: 'print'` から撮る。PNG は A4 が `deviceScaleFactor: 2`、square は `1`。
 - **data-format（必須）**: 各ページのキャンバスルートに `data-format="a4" | "square"` を宣言する。

@@ -17,17 +17,13 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./entrypoint": {
-      "types": "./dist/entrypoint.d.ts",
-      "import": "./dist/entrypoint.js"
+    "./init": {
+      "types": "./dist/init.d.ts",
+      "import": "./dist/init.js"
     },
     "./vite-plugin": {
       "types": "./dist/vite-plugin.d.ts",
       "import": "./dist/vite-plugin.js"
-    },
-    "./page": {
-      "types": "./dist/page.d.ts",
-      "import": "./dist/page.js"
     },
     "./page.css": "./dist/page.css",
     "./print.css": "./dist/print.css"
