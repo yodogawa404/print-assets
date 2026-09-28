@@ -43,8 +43,8 @@ export default defineConfig({
     vanillaExtractPlugin(),
     printAssets({
       pagesDir: 'src/pages',
-      theme: 'src/styles/theme.css.ts',      // 任意: themeClass を export するモジュール
-      styles: ['src/styles/global.css.ts'],  // 任意: グローバルに import する CSS
+      theme: 'src/styles/theme.css.ts', // 任意: themeClass を export するモジュール
+      styles: ['src/styles/global.css.ts'], // 任意: グローバルに import する CSS
     }),
   ],
 });

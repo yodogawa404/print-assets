@@ -20,8 +20,16 @@ const catalogStyle = {
   fontFamily: "'Inter', 'LINE Seed JP', 'Noto Sans JP', sans-serif",
 } as const;
 
-const titleStyle = { fontSize: '9mm', fontWeight: 700, color: '#1a1a1a' } as const;
-const descStyle = { fontSize: '4.5mm', lineHeight: 1.7, color: '#6b7280' } as const;
+const titleStyle = {
+  fontSize: '9mm',
+  fontWeight: 700,
+  color: '#1a1a1a',
+} as const;
+const descStyle = {
+  fontSize: '4.5mm',
+  lineHeight: 1.7,
+  color: '#6b7280',
+} as const;
 const listStyle = {
   listStyle: 'none',
   margin: 0,
@@ -30,7 +38,11 @@ const listStyle = {
   flexDirection: 'column',
   gap: '6mm',
 } as const;
-const itemStyle = { display: 'flex', flexDirection: 'column', gap: '2mm' } as const;
+const itemStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '2mm',
+} as const;
 const linkStyle = {
   display: 'block',
   fontSize: '6mm',

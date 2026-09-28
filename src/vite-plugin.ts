@@ -21,8 +21,8 @@ function unicodeSort(a: string, b: string) {
 }
 
 function routesModule(pagesDir: string): string {
-  const mains = globSync('*/main.tsx', { cwd: pagesDir, absolute: true }).sort((a, b) =>
-    unicodeSort(basename(dirname(a)), basename(dirname(b))),
+  const mains = globSync('*/main.tsx', { cwd: pagesDir, absolute: true }).sort(
+    (a, b) => unicodeSort(basename(dirname(a)), basename(dirname(b))),
   );
 
   const lines: string[] = [];

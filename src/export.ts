@@ -29,15 +29,21 @@ export function pageSlugs(pagesDir: string): string[] {
 
 async function keepOnlyAssets(distDir: string) {
   const keep = new Set(['.png', '.pdf']);
-  const files = globSync('**/*', { cwd: distDir, absolute: true, onlyFiles: true });
+  const files = globSync('**/*', {
+    cwd: distDir,
+    absolute: true,
+    onlyFiles: true,
+  });
   await Promise.all(
     files
       .filter((f) => !keep.has(extname(f).toLowerCase()))
       .map((f) => unlink(f).catch(() => undefined)),
   );
-  const dirs = globSync('**/', { cwd: distDir, absolute: true, onlyDirectories: true }).sort(
-    (a, b) => b.length - a.length,
-  );
+  const dirs = globSync('**/', {
+    cwd: distDir,
+    absolute: true,
+    onlyDirectories: true,
+  }).sort((a, b) => b.length - a.length);
   await Promise.all(dirs.map((d) => rmdir(d).catch(() => undefined)));
 }
 
@@ -72,7 +78,10 @@ export async function exportPages({ pagesDir, distDir }: ExportOptions) {
 
   for (const slug of slugs) {
     // Pass 1: open a page to read the canvas data-format attribute.
-    const probe = await browser.newPage({ deviceScaleFactor: 2, viewport: A4_VIEWPORT });
+    const probe = await browser.newPage({
+      deviceScaleFactor: 2,
+      viewport: A4_VIEWPORT,
+    });
     await probe.goto(`${baseUrl}/#/${slug}`, { waitUntil: 'networkidle' });
     await probe.emulateMedia({ media: 'print' });
     const probeCanvas = probe.locator('[data-canvas="page"]').first();
