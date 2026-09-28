@@ -30,8 +30,3 @@
     zoom: calc(min(100vw - 32mm, 100vh - 32mm) / 2048px);
   }
 }
-
-/* Ensure the font stack also applies when printing / capturing. */
-[data-canvas='page'] * {
-  font-family: 'Inter', 'LINE Seed JP', 'Noto Sans JP', sans-serif;
-}

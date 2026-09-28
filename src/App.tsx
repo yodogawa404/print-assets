@@ -17,7 +17,6 @@ const catalogStyle = {
   display: 'flex',
   flexDirection: 'column',
   gap: '10mm',
-  fontFamily: "'Inter', 'LINE Seed JP', 'Noto Sans JP', sans-serif",
 } as const;
 
 const titleStyle = {
