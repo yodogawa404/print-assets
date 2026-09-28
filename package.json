@@ -1,6 +1,6 @@
 {
   "name": "@yodogawa404/print-assets",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Vite plugin + React toolkit for assembling fixed-size print assets (posters, flyers, etc.) and exporting them to PDF / Retina PNG via headless Chromium (Playwright)",
   "type": "module",
   "license": "MIT",
