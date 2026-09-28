@@ -1,130 +1,138 @@
 # @yodogawa404/print-assets
 
-プリント素材（ポスター・フライヤー・請求書等）を、固定サイズの A4 キャンバスで宣言的に組み、
-**print CSS から PDF / PNG を書き出す**ための Vite プラグインです。
+固定サイズの印刷素材（ポスター、フライヤー、写真シートなど、レイアウトが固定されたもの）を React で組み立て、**PDF** と **Retina PNG** に書き出すための Vite プラグイン＋React ツールキットです。
 
-1 つのプラグインに「file-based routing のページ組立」と「Playwright による PDF / PNG 出力」を
-収めています。ブランドトークン（テーマ）は持ちません。
+1印刷面＝`pages` 直下の1フォルダ（それぞれに `main.tsx` を持つ）として定義します。プラグインはそれらをハッシュルーターのカタログとしてルーティングし、マークアップからフォーマットを自動検出。本番ビルドのたびにヘッドレスChromium（Playwright）で各ページを描画して `dist/` へ `*.pdf` / `*.png` を生成します。
 
-## 特徴
+## できること
 
-- **1 つの Vite プラグイン**: `printAssets({ pagesDir, theme?, styles? })` を `vite.config.ts` に足すだけ。
-- **file-based routing**: `src/pages/*/main.tsx` のフォルダ名 = URL。並び順はユニコード順。
-- **print CSS から出力**: PNG も PDF も `media: 'print'` + `deviceScaleFactor: 2` で撮影 → 同一見た目。
-- **dist は PNG / PDF だけ**: 出力後に HTML / JS / CSS を削除。
-- **ブランド非依存**: 構造スタイル（`.page` キャンバス / `@page`）のみを配布。
+- **ページ自動ルーティング。** `pagesDir` に1フォルダ＝1ページ。フォルダ名がそのままルート（パス/ラベル）になり、手動でのルート登録は不要です。
+- **印刷用固定キャンバス。** 各ページのキャンバスルートに`data-canvas="page"` と `data-format` を宣言します。`a4`（210×297mm）と
+  `square`（2048×2048px）に対応し、mm/px のCSSと切り捨て丸めで出力されます。
+- **PDF / PNG 自動書き出し。** ビルド後に Playwright（print メディアのエミュレーション）で各ページを描画し、宣言されたフォーマットに応じて`*.pdf` と `*@2x.png` / `*@2048.png` を生成します。
+- **テーマ＋グローバルスタイル。** `themeClass` をエクスポートするthemeモジュールと、全ページへ読み込むスタイル（フォント、`global.css` など）を指定できます。
+- **カタログ画面。** ハッシュルーターのカタログですべてのページを一覧・プレビュー。各ページは `/#/<slug>` で直接開けます。
+- **既定で最適化。** パッケージのプリバンドルを無効化し、React を明示的にプリバンドル、仮想Route/configモジュールをビルド時に差し込みます。
 
 ## インストール
 
 ```bash
-npm install @yogodawa404/print-assets
+npm i -D @yodogawa404/print-assets
 ```
 
-初回のみ Playwright の chromium をインストールします（consumer 側の devDependency として `playwright` を追加）。
+エクスポートは `playwright` をオンデマンドで読み込むため、peerDependency で指定しています。あわせてインストールしてください（`chromium` を使用）:
 
 ```bash
-npm install -D playwright
+npm i -D playwright
 npx playwright install chromium
 ```
 
 ## 使い方
 
-`vite.config.ts`:
+### 1. Vite 設定にプラグインを追加
 
 ```ts
+// vite.config.ts
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
-import { printAssets } from '@yogodawa404/print-assets/vite-plugin';
+import { printAssets } from '@yodogawa404/print-assets/vite-plugin';
 
 export default defineConfig({
   plugins: [
     react(),
-    vanillaExtractPlugin(),
     printAssets({
       pagesDir: 'src/pages',
-      theme: 'src/styles/theme.css.ts', // 任意: themeClass を export するモジュール
-      styles: ['src/styles/global.css.ts'], // 任意: グローバルに import する CSS
+      // theme: './src/theme.ts',       // themeClass をエクスポート（任意）
+      // styles: ['./src/global.css'],  // 全ページに読み込むCSS（任意）
     }),
   ],
 });
 ```
 
-`index.html`:
+### 2. ページを作成
 
-```html
-<!doctype html>
-<html lang="ja">
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/entrypoint.js"></script>
-  </body>
-</html>
+各ページは `pagesDir` の直下に1フォルダ＝1ページとして配置し、`main.tsx`（プラグインがバンドルするコンポーネント）を持ちます。キャンバスルートはフォーマットを読めるよう、プラグインに検出可能な形で置きます:
+
+```tsx
+// src/pages/poster/main.tsx
+export default function Poster() {
+  return (
+    <div data-canvas="page" data-format="a4">
+      <h1>セールのお知らせ</h1>
+    </div>
+  );
+}
 ```
 
-`src/entrypoint.js`:
+対応するフォーマット:
 
-```js
+| `data-format` | キャンバスサイズ | 出力ファイル                |
+| ------------- | ---------------- | --------------------------- |
+| `a4`          | `210mm × 297mm`  | `slug.pdf`, `slug@2x.png`   |
+| `square`      | `2048 × 2048px`  | `slug.pdf`, `slug@2048.png` |
+
+### 3. マウントして init
+
+コンシューマー側でCSSを読み込み、`init` を呼び出します:
+
+```ts
 import { init } from '@yodogawa404/print-assets/init';
-init(document.getElementById('app'));
+
+init(document.getElementById('root')!);
 ```
 
-### ページの追加
+`init` は指定した要素へ、解決済みの `themeClass` を適用してカタログ（または`window.location.hash` に一致するページ）を描画します。
 
-`src/pages/` にフォルダを作り、直下の `main.tsx` を default export で実装します。
-キャンバスのルートには `data-format` 属性が**必須**です（`a4` または `square`。
-欠落・不正値はビルド時にエラーになります）。
+### 4. エクスポート
 
-```tsx
-import { page } from '@yodogawa404/print-assets/page';
-import * as s from './poster.css.ts';
-
-export default function PosterPage() {
-  return (
-    <div className={page} data-canvas="page" data-format="a4">
-      <div className={s.canvas}>…</div>
-    </div>
-  );
-}
-```
-
-正方形（2048 × 2048 px）で出力する場合は `pageSquare` を使い `data-format="square"` を指定します。
-
-```tsx
-import { pageSquare } from '@yodogawa404/print-assets/page';
-
-export default function SquarePage() {
-  return (
-    <div className={pageSquare} data-canvas="page" data-format="square">
-      <div className={s.canvas}>…</div>
-    </div>
-  );
-}
-```
-
-- `a4`: A4 PDF + PNG（Retina 2x）を出力
-- `square`: 正方形 PDF（2048 × 2048 px）+ PNG（2048 × 2048 px）を出力
-
-### コマンド
+プラグインの `closeBundle` が本番ビルド後に自動でエクスポートを実行します:
 
 ```bash
-npm run dev      # プレビュー（src/pages/ を編集）
-npm run build    # 本番ビルド + print CSS から PDF / PNG を dist/ へ出力
-npm run preview  # 注意: dist は PNG / PDF のみのため preview は効かない
+npm run build
 ```
 
-## テーマ
+`dist/` に出力されます:
 
-`theme` オプションに、`createTheme` の `themeClass` を export するモジュールを渡してください。
+```
+dist/
+  poster.pdf
+  poster@2x.png
+  square-card.pdf
+  square-card@2048.png
+```
 
-## peerDependencies
+書き出し後、印刷アセット以外のビルド出力（HTML/JS/CSS）は削除され、PDF と PNG だけが残ります。
 
-- `react` / `react-dom` `^19`
-- `vite` `>=6`
-- `playwright` `>=1.40`（consumer の devDependency）
+## オプション
 
-エンジンは prebundle 不可（virtual module を使用）のため、consumer 側に
-`optimizeDeps.exclude: ['@yogodawa404/print-assets']` 相当を自動で設定します。
+| オプション | 型         | 既定 | 説明                                                                                              |
+| ---------- | ---------- | ---- | ------------------------------------------------------------------------------------------------- |
+| `pagesDir` | `string`   | —    | **必須。** ページごとのサブフォルダを持つルートフォルダ。                                         |
+| `theme`    | `string`   | —    | `themeClass` をエクスポートするモジュール（任意）。ブランドトークンはコンシューマー側に生きます。 |
+| `styles`   | `string[]` | `[]` | 全ページにグローバルに読み込むCSS（フォント、`global.css` など）。                                |
+
+### 仮想モジュール
+
+プラグインはエンジンに2つの Vite 仮想モジュールを提供します:
+
+- `virtual:print-assets/routes` — 自動生成されるルートテーブル（各ページの`path` / `label` / 遅延解決された `Component`）。
+- `virtual:print-assets/config` — 指定したスタイルを読み込み、設定されたtheme から `themeClass` を再エクスポートします。
+
+`init` はこれらを内部でインポートします。
+
+## API
+
+### `printAssets(options)`
+
+Vite プラグインを返します。詳細は [オプション](#オプション) を参照。
+
+### `pageSlugs(pagesDir)`
+
+`pagesDir` からページフォルダをスキャンし、そのスラグ（フォルダ名）を返します。
+
+### `exportPages({ pagesDir, distDir })`（`/export.js`）
+
+プログラムからのエクスポート: 本番ビルドを配信し、各ページを Playwright で開いて解決済みのフォーマット/スケールで PDF/PNG を `distDir` へ書き出します。`closeBundle` から自動で呼ばれます。
 
 ## ライセンス
 

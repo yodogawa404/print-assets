@@ -1,71 +1,62 @@
-# AGENTS.md — @yogodawa404/print-assets（エンジン）
+# @yodogawa404/print-assets — エージェント向けガイド
 
-プリント素材生成エンジンの公開 OSS パッケージ。consumer リポジトリ
-（`assets-plate`）では npm workspaces で本パッケージを参照し、`dist/` の
-プリコンパイル JS を使います。
+このドキュメントは `@yodogawa404/print-assets`（Vite プラグイン＋React の印刷素材ツールキット）を変更する際の規則とよくある落とし穴をまとめたものです。
+コードを書く前に必ず読んでください。
 
-## 役割
+## 何をするパッケージか
 
-- 構造スタイル（`.page` 固定キャンバス / `@page`）+ virtual module routing +
-  closeBundle export のみ。
-- **prebundle 不可**（virtual module 使用）。`optimizeDeps.exclude` を plugin の
-  `config()` フックで設定し、react 系は `optimizeDeps.include` で prebundle を強制する。
+固定サイズの印刷素材（ポスター、フライヤー、写真シート、SNS用バナー）をReact で組み立て、Vite でビルドした後、ヘッドレス Chromium（Playwright）で描画して **PDF / Retina PNG** を `dist/` へ書き出すためのツールです。
 
-## コマンド
+1印刷面＝`pagesDir` 直下の1フォルダ＝1ページ。各ページにはルートコンポーネント（`main.tsx`）を持ちます。ページはフォルダ名（スラッグ）から自動でルーティングされ、ハッシュルーターの「カタログ画面」で一覧・プレビューできます。
+
+## リポジトリ構成
+
+```
+scripts/build.mjs   # 配布ビルド: tsc で JS + .d.ts を出力し、CSS を dist へコピー
+src/
+  index.ts          # printAssets (vite-plugin) / pageSlugs (export) を再エクスポート
+  vite-plugin.ts    # Vite プラグイン本体（仮想モジュール生成、closeBundle で exportPages）
+  export.ts         # 本番ビルドを Playwright で配信し PDF/PNG を書き出す
+  App.tsx           # ハッシュルーターのカタログ＋テーマ適用（init から使う）
+  init.tsx          # init(): themeClass を取り込み createRoot で描画
+  types.ts          # PrintRoute（仮想ルート型）
+  virtual.d.ts      # 仮想モジュールの型宣言
+  page.css          # キャンバス固定サイズ（a4 / square）のCSS
+  print.css         # 印刷用（@page A4、ステージ余白の除去）
+```
+
+配布物（`dist/`）は tsc と `scripts/build.mjs` で生成します。`dist/` の中身を直接書き換えないでください。生成物です。
+
+## ビルド／チェックコマンド
 
 ```bash
-npm run build   # このパッケージ単体の precompile（tsc → dist/ + css コピー）
+npm run build          # tsc → dist/ へ JS + .d.ts + page.css + print.css を出力
+npm run format         # prettier --write
+npm run format:check   # prettier --check
 ```
 
-エンジン本体を変更したら、consumer 側で `npm run build:engine` を実行してから検証する
-（consumer は `packages/print-assets/dist/` を参照）。
+- ビルドは `scripts/build.mjs`（`npx tsc -p tsconfig.json` の後に CSS をコピー）。
+- フォーマットは既定の Prettier 設定（`.prettierrc`）に従うこと。コミット前に`npm run format:check` が通ることを確認する。
 
-## ディレクトリ構成
+## 設計の不変条件
 
-```
-src/
-  vite-plugin.ts   # printAssets({ pagesDir, theme?, styles? })
-                   #   virtual:print-assets/routes（pagesDir/*/main.tsx を glob）
-                   #   virtual:print-assets/config（theme + styles 注入）
-                   #   config(): optimizeDeps の exclude / include
-                   #   closeBundle: exportPages を実行
-  init.tsx         # init(element) を export。consumer が index.html 等から直接 import して起動
-  App.tsx          # file-based hash routing + 画面専用カタログ
-  page.css / page.ts  # .page 固定キャンバス（構造のみ）
-  print.css        # @page { size:A4; margin:0 } + print 用ステージ除去
-  export.ts        # Playwright: served → print → Retina 2x → dist の HTML/JS/CSS 削除
-  types.ts / virtual.d.ts / css.d.ts
-scripts/build.mjs  # tsc で precompile + page.css / print.css を dist へコピー
-```
+- **固定サイズのキャンバス。** 各ページのルートは `data-canvas="page"` を持ち、`data-format` で `a4`（`210mm × 297mm`）または `square`（`2048 × 2048px`）を宣言する。サイズは印刷 CSS（`page.css`）で mm/px ベースの固定値として定義され、出力時は切り捨てて端数を丸める。
+- **フォーマットはマークアップから自動判定。** `export.ts` は最初のページを開いて`data-format` を読み取り、それに応じてビューポート/スケール/出力ファイル名を変える。`pagesDir` 内のスラッグ→フォーマットの手動登録は存在しない。
+- **出力規約。** A4 は `slug.pdf` と `slug@2x.png`、square は `slug.pdf` と`slug@2048.png`。エクスポート後に `dist/` からアセット以外（HTML/JS/CSS）を削除し、PNG/PDF だけを残す。
+- **仮想モジュール。** プラグインは `virtual:print-assets/routes` と`virtual:print-assets/config` を差し込む。`init` / `App` はこれを直接利用する。仮想モジュールはプリバンドルできないため、`configureServer`/オプティマイズ設定でReact を明示的に prebundle している。
+- **theme はコンシューマー側。** `themeClass`（ブランドトークン）は利用側のモジュールがエクスポートし、プラグインはそれを `themeClass` として仮想`config` 経由で再エクスポートするだけ。テーマの実体を当パッケージに持たせない。
+- **エクスポートは Playwright 依存。** `export.ts` は `node:http` の静的サーバーで`dist/` を配信し、`playwright`（peerDependency、オンデマンド import）で chromium を立ち上げる。テストには使わず、ビルド後の書き出し専用。
 
-## 重要：設計・規約
+## 変更時の注意
 
-- **ブランドを持たない**。`page.css` / `print.css` / routing は構造のみ。
-- **プリコンパイル JS を配布**（tsc で JSX→`createElement`、react は external）。
-  実ランタイムは consumer の react 19（peerDependencies `^19`）。
-- **virtual module と dev / build**:
-  - prebundle 不可 → plugin の `config()` で `optimizeDeps.exclude: ['@yogodawa404/print-assets']`
-  - exclude すると react 系が走査されないため、`optimizeDeps.include` で
-    `react` / `react-dom` / `react-dom/client` / `react/jsx-runtime` / `react/jsx-dev-runtime`
-    を prebundle 強制（これをしないと dev で `createRoot` の named export エラーになる）。
-  - consumer は `init` を `@yogodawa404/print-assets/init` から import して起動する
-    （エントリ配布・`transformIndexHtml` による書換は廃止）。
-- **固定キャンバス**: `.page`（A4 `210mm × 297mm`）と `.page-square`（`2048 × 2048 px`）の 2 種。
-  PDF も PNG も `media: 'print'` から撮る。PNG は A4 が `deviceScaleFactor: 2`、square は `1`。
-- **data-format（必須）**: 各ページのキャンバスルートに `data-format="a4" | "square"` を宣言する。
-  欠落・不正値は export が throw する。export は属性を読んで PNG 解像度と PDF サイズを切り替える
-  （square の PDF は `@page { size:2048px 2048px }` を注入して撮る）。
-- **print 時のステージ余白**: ステージの余白は App が**インラインスタイル**で当てるため、
-  `print.css` の `html [data-stage] { padding:0; gap:0 }` は `!important` 必須。
-  これが無いとインライン余白が残り、PDF が**白紙 1 枚目＋2 枚目にずれて出力**される
-  （修正済み。ステージ余白の実装方式を変えたら要再確認）。
-- **dist は PNG / PDF だけ**: export 後に HTML / JS / CSS / assets を全削除
-  （`keepOnlyAssets`）。`vite preview` は効かなくなる点に注意。
-- **Playwright 分離**: 常用 Chrome / 実プロファイルには触れない。
-  バンドルの chromium（`channel: 'chrome'` を使わない）を一時プロファイルで起動。
+- **公開 API を変えるとき**は `src/index.ts` の再エクスポートと `package.json` の`exports` マップ（`.`, `./init`, `./vite-plugin`, `./page.css`, `./print.css`）を必ず揃える。CSS を増やしたら `scripts/build.mjs` のコピー処理にも追加する。
+- `src/*.tsx` は `.js` 拡張子付きの相対 import を使う（ESM / NodeNext 整合）。兄弟 `.js` / `.tsx` はビルド後 `dist/` に同名 `.js` として出るので、import は`./App.js` のように `.js` に解決する。
+- 仮想モジュール名（`virtual:print-assets/*`）や仮想型（`virtual.d.ts`）は仮想モジュールを持つ各所で二重に管理されている。変更時は `vite-plugin.ts` の`ROUTES`/`CONFIG` 定数、`virtual.d.ts`、利用側（`init`/`App`）をまとめて更新する。
+- **不要な機能を追加しない。** このパッケージは「固定キャンバス＋印刷CSS＋Playwright書き出し」という狭い責務を意図的に保っている。ページごとのテーマ、フォーマットの拡張、レイアウトエンジンなどの自由度はコンシューマー側で解決する。
+- Vite のバージョンは peerDependency（`>=6`）。Vite の内部API（`createServer` のポート折衝、`optimizeDeps.exclude/include`、仮想モジュールの NUL プレフィックス規約）に依存しているため、Vite の破壊的変更には敏感になること。
 
-## 公開
+## プルリク / コミット
 
-- `npm pack` で配布物を確認する（`files: ["dist"]` のみ）。
-  consumer の `src/` やフォントは含めない。
-- ライセンスは MIT。
+- 変更は最小構成の単一スコープを保つ。目的外のリファクタリングは混ぜない。
+- フォーマットは `prettier` に任せる（手動整形しない）。
+- `README.md` / `AGENTS.md` は実際の挙動とズレないよう、API や出力規約を変更したときはこのファイルとあわせて更新する。
