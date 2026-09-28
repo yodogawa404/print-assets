@@ -4,15 +4,7 @@ import { rmdir, unlink } from 'node:fs/promises';
 import { basename, dirname, extname, join } from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { globSync } from 'tinyglobby';
-
-const MIME: Record<string, string> = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript',
-  '.css': 'text/css',
-  '.woff2': 'font/woff2',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-};
+import mime from 'mime/lite';
 
 const A4_VIEWPORT = { width: 794, height: 1123 };
 const SQUARE_VIEWPORT = { width: 2048, height: 2048 };
@@ -61,7 +53,7 @@ export async function exportPages({ pagesDir, distDir }: ExportOptions) {
       const { readFile } = await import('node:fs/promises');
       const body = await readFile(filePath);
       res.writeHead(200, {
-        'Content-Type': MIME[extname(filePath)] ?? 'application/octet-stream',
+        'Content-Type': mime.getType(filePath) ?? 'application/octet-stream',
       });
       res.end(body);
     } catch {
